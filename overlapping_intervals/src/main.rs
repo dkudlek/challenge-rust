@@ -1,20 +1,23 @@
+use clap::Parser;
 use rand::Rng;
+use serde::Deserialize;
+use serde::Serialize;
 use std::time::Instant;
 
-#[derive(Eq, PartialEq, PartialOrd, Ord, Clone)]
+#[derive(Eq, PartialEq, PartialOrd, Ord, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "PascalCase")]
 pub(crate) struct Interval {
-    low: i64,
-    high: i64,
+    low: i32,
+    high: i32,
 }
 
 pub enum Mode {
-    Naive,
-    BinSearch,
-    DynamicProgramming,
+    Naive,              // O(N *N)
+    DynamicProgramming, // O(N log(N) + N)
 }
 
 impl Interval {
-    pub fn new(low: i64, high: i64) -> Interval {
+    pub fn new(low: i32, high: i32) -> Interval {
         Interval {
             low: low,
             high: high,
@@ -38,9 +41,11 @@ impl Interval {
     }
 
     fn has_single_interval(list: &Vec<Interval>, mode: &Mode) -> (bool, Interval) {
+        if list.is_empty() {
+            return (false, Interval::new(0, 0));
+        }
         match mode {
             Mode::Naive => Interval::naive_search(&list),
-            Mode::BinSearch => Interval::binary_search(list),
             Mode::DynamicProgramming => Interval::dynamic_search(list),
         }
     }
@@ -69,56 +74,10 @@ impl Interval {
         (false, Interval::new(0, 0))
     }
 
-    fn binsearch_match(interval: Interval, list: &Vec<Interval>) -> bool {
-        let mut low = 0;
-        let mut high = list.len() - 1;
-        while low <= high {
-            let mid = (low + high) / 2;
-            let midval = list[mid].copy();
-            if low == high {
-                break;
-            }
-            if midval < interval {
-                if interval != midval && Interval::overlaps(&interval, &midval) {
-                    return true;
-                }
-                low = mid + 1
-            } else if midval >= interval {
-                if interval != midval && Interval::overlaps(&interval, &midval) {
-                    /*
-                    Skip the interval that we currently look at
-                    If it's equal we can look into the right branch
-                    */
-                    return true;
-                }
-                high = mid;
-            } else {
-                break;
-            }
-        }
-        return false;
-    }
-
-    fn binary_search(list: &Vec<Interval>) -> (bool, Interval) {
-        let mut sorted_list = list.to_vec();
-        sorted_list.sort();
-
-        for itr in sorted_list.clone().into_iter() {
-            /*
-             * Binary Search for each interval in our list
-             */
-            let has_overlap = Interval::binsearch_match(itr.copy(), &sorted_list);
-            if !has_overlap {
-                return (true, itr.copy());
-            }
-        }
-        (false, Interval::new(0, 0))
-    }
-
     /**
      * Dynamic approach with: O(N log N) + O(N)
-     * (1) Sort the array: N log N
-     * (2) Touch each element and compare to memorized interval
+     * (1) Sort the array: O(N log N)
+     * (2) Touch each element and compare to memorized interval: O(N)
      *
      * Memoization technique: We use one interval to memorize all the intervals we've seen. When a
      * interval overlaps with it then we grow this interval. This means for each element, we only
@@ -129,18 +88,25 @@ impl Interval {
      * list.
      */
     fn dynamic_search(list: &Vec<Interval>) -> (bool, Interval) {
-        let mut span = match list.first() {
-            Some(val) => val.copy(),
-            None => return (false, Interval::new(0, 0)),
-        };
+        /* Sort list (and copy) */
         let mut sorted_list = list.to_vec();
         sorted_list.sort();
+
+        /* Initialize other helper variables */
+        let mut span = Interval::new(0, 0);
         let mut found = false;
         let idx_max = sorted_list.len() - 1;
         for (idx, itr) in sorted_list.into_iter().enumerate() {
+            /* Update buffer and skip first check */
+            if idx == 0 {
+                span = itr;
+                continue;
+            }
             let has_overlap = Interval::overlaps(&span, &itr);
             if has_overlap {
-                span.high = itr.high;
+                if itr.high > span.high {
+                    span.high = itr.high;
+                }
                 found = false;
             } else {
                 if idx == 1 {
@@ -168,8 +134,9 @@ impl Interval {
     }
 }
 
-/// .
-fn main() {
+fn run_sanity_check() {
+    /* Sanity check  */
+    println!("[RUN    ] Sanity check");
     let interval_a = Interval::new(0, 4);
     let interval_b = Interval::new(3, 5);
     let interval_c = Interval::new(4, 5);
@@ -185,9 +152,9 @@ fn main() {
     assert!(!Interval::overlaps(&interval_b, &interval_d));
     assert!(!Interval::overlaps(&interval_c, &interval_d));
     println!("[SUCCESS] Test helper functions");
+}
 
-    /* Sanity check  */
-    println!("[RUN    ] Sanity check");
+fn run_small_examples() {
     let unmatched_first = vec![
         Interval::new(0, 3),
         Interval::new(4, 6),
@@ -227,17 +194,6 @@ fn main() {
     assert!(!result);
     println!("[SUCCESS] Sanity check: naive approach");
 
-    /* Binary Search approach */
-    (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::BinSearch);
-    assert!(result && interval == Interval::new(0, 3));
-    (result, interval) = Interval::has_single_interval(&unmatched_last, &Mode::BinSearch);
-    assert!(result && interval == Interval::new(25, 50));
-    (result, interval) = Interval::has_single_interval(&unmatched_middle, &Mode::BinSearch);
-    assert!(result && interval == Interval::new(7, 9));
-    (result, _) = Interval::has_single_interval(&matched, &Mode::Naive);
-    assert!(!result);
-    println!("[SUCCESS] Sanity check: binary search approach");
-
     /* dynamic approach */
     (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
     assert!(result && interval == Interval::new(0, 3));
@@ -249,66 +205,132 @@ fn main() {
     (result, _) = Interval::has_single_interval(&matched, &Mode::Naive);
     assert!(!result);
     println!("[SUCCESS] Sanity check: dynamic approach");
+}
 
-    println!("[RUN    ] Execute random test");
-    let mut rng = rand::thread_rng();
-    let mut rand_vec: Vec<Interval> = Vec::new();
-    for _i in 0..1_000_000 {
-        let one: i64 = rng.gen_range(0..i64::MAX);
-        let two: i64 = rng.gen_range(0..i64::MAX);
-        if one > two {
-            rand_vec.push(Interval::new(two, one));
-        } else {
-            rand_vec.push(Interval::new(one, two));
-        }
-
-        println!("[SUCCESS] Execute random test: Test data generated");
+/*
+fn write_to_disk(list: &Vec<Interval>) {
+    let mut wtr = match csv::Writer::from_path("no_overlap.csv") {
+        Ok(file_wrt) => file_wrt,
+        Err(e) => panic!("Could not open file! {}", e),
+    };
+    for itr in list {
+        let _ = wtr.serialize(itr);
     }
+    let _ = wtr.flush();
+}
+*/
 
-    println!("[RUN    ] Execute random test: naive approach");
+fn read_from_disk(file: String) -> Vec<Interval> {
+    let mut vector = vec![];
+    let mut rdr = match csv::Reader::from_path(file) {
+        Ok(file_rdr) => file_rdr,
+        Err(e) => panic!("Could not open file! {}", e),
+    };
+    for result in rdr.deserialize() {
+        // The iterator yields Result<StringRecord, Error>, so we check the
+        // error here.
+        match result {
+            Ok(record) => vector.push(record),
+            Err(_) => continue,
+        };
+    }
+    vector
+}
+
+fn execute_test(list: &Vec<Interval>) {
+    println!("[RUN    ] Execute test: naive approach");
     let naive_result;
     let naive_start = Instant::now();
-    (naive_result, _) = Interval::has_single_interval(&rand_vec, &Mode::Naive);
+    (naive_result, _) = Interval::has_single_interval(&list, &Mode::Naive);
     let naive_duration = naive_start.elapsed();
     println!(
-        "[SUCCESS] Execute random test: naive approach with '{}'",
+        "[SUCCESS] Execute test: naive approach with '{}'",
         naive_result
     );
 
-    println!("[RUN    ] Execute random test: binarySearch approach");
-    let bin_result;
-    let bin_start = Instant::now();
-    (bin_result, _) = Interval::has_single_interval(&rand_vec, &Mode::BinSearch);
-    let bin_duration = bin_start.elapsed();
-    println!(
-        "[SUCCESS] Execute random test: binarySearch approach with '{}'",
-        bin_result
-    );
-    assert!(naive_result == bin_result);
-
-    println!("[RUN    ] Execute random test: dynamic approach");
+    println!("[RUN    ] Execute test: dynamic approach");
     let dynamic_result;
     let dynamic_start = Instant::now();
-    (dynamic_result, _) = Interval::has_single_interval(&rand_vec, &Mode::DynamicProgramming);
+    (dynamic_result, _) = Interval::has_single_interval(&list, &Mode::DynamicProgramming);
     let dynamic_duration = dynamic_start.elapsed();
     println!(
-        "[SUCCESS] Execute random test: dynamic approach with '{}'",
+        "[SUCCESS] Execute test: dynamic approach with '{}'",
         dynamic_result
-    );
-    assert!(bin_result == dynamic_result);
-
-    println!(
-        "[EVAL   ] Naive Approach took {} s",
-        naive_duration.as_secs()
-    );
-    println!(
-        "[EVAL   ] binarySearch Approach took {} s",
-        bin_duration.as_secs()
-    );
-    println!(
-        "[EVAL   ] Dynamic Approach took {} s",
-        dynamic_duration.as_secs()
     );
 
     assert!(naive_result == dynamic_result);
+
+    println!(
+        "[EVAL   ] Naive Approach took {} us",
+        naive_duration.as_micros()
+    );
+    println!(
+        "[EVAL   ] Dynamic Approach took {} us",
+        dynamic_duration.as_micros()
+    );
+}
+
+#[derive(Parser)]
+struct Cli {
+    /// The pattern to look for
+    #[arg(long, default_value = "")]
+    file_with_overlap: String,
+    /// The path to the file to read
+    #[arg(long, default_value = "")]
+    file_without_overlap: String,
+    #[arg(long, default_value = "0")]
+    number_of_rand_runs: i32,
+}
+
+fn main() {
+    let args = Cli::parse();
+
+    run_sanity_check();
+    run_small_examples();
+
+    /* Test big dataset with overlap  */
+    if !args.file_with_overlap.is_empty() {
+        println!("[RUN    ] Test with overlap");
+        let vec = read_from_disk(args.file_with_overlap);
+        execute_test(&vec);
+        println!("[SUCCESS] Test with overlap");
+    } else {
+        println!("[Skipped] Test with overlap");
+    }
+
+    /* Test big dataset without overlap  */
+    if !args.file_without_overlap.is_empty() {
+        println!("[RUN    ] Test with overlap");
+        let vec = read_from_disk(args.file_without_overlap);
+        execute_test(&vec);
+        println!("[SUCCESS] Test with overlap");
+    } else {
+        println!("[Skipped] Test without overlap");
+    }
+
+    /* Random Test Suite */
+    println!("[RUN    ] Execute random test");
+    let max_size = 2_i32.pow(22);
+    for _ in 0..args.number_of_rand_runs {
+        let mut rng = rand::thread_rng();
+        let mut rand_vec: Vec<Interval> = Vec::new();
+        for _i in 0..100_000 {
+            let mut one: i32 = rng.gen_range(0..i32::MAX);
+            let mut two: i32 = rng.gen_range(0..i32::MAX);
+            if one > two {
+                let delta = (one - two).abs() - max_size;
+                if delta > 0 {
+                    one = two + max_size;
+                }
+                rand_vec.push(Interval::new(two, one));
+            } else {
+                let delta = (one - two).abs() - max_size;
+                if delta > 0 {
+                    two = one + max_size;
+                }
+                rand_vec.push(Interval::new(one, two));
+            }
+        }
+        execute_test(&rand_vec);
+    }
 }
