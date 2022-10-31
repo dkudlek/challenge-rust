@@ -1,7 +1,56 @@
+/*
+* MIT License
+*
+* Copyright (c) 2022 David Kudlek
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+*/
+
+/*
+
+Given a list of intervals:
+We want to know if there's one interval which doesn't overlap with another interval
+
+An interval overlaps if end of one and start of the other are the equal (closed interval, including start and end value)
+e.g.
+- [0, 3] and [1, 2] overlap
+- [0, 3] and [3, 5] overlap
+- [0, 3] and [4, 6] don't overlap
+
+Solutions :
+(1) Naive Solution: O(N * N)
+(2) Dynamic solution: O(N * log(N) + N) ~ O(N*log(N))
+
+Notes:
+- tuple compare compares value by value:
+(1, 2) < (2, 4), because 1 < 2
+(1, 2) < (1, 3), because 1 == 1 and 2 < 3
+(1, 2) > (0, 1), because 1 > 0
+
+
+ */
 use clap::Parser;
 use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
+use std::time::Duration;
 use std::time::Instant;
 
 #[derive(Eq, PartialEq, PartialOrd, Ord, Clone, Deserialize, Serialize)]
@@ -43,6 +92,8 @@ impl Interval {
     fn has_single_interval(list: &Vec<Interval>, mode: &Mode) -> (bool, Interval) {
         if list.is_empty() {
             return (false, Interval::new(0, 0));
+        } else if list.len() == 1 {
+            return (true, list[0].copy());
         }
         match mode {
             Mode::Naive => Interval::naive_search(&list),
@@ -64,7 +115,8 @@ impl Interval {
                 if idx == idx2 {
                     continue;
                 } else if Interval::overlaps(&itr, &itr2) {
-                    has_overlap = true
+                    has_overlap = true;
+                    break; // Early exit because we found an overlapping interval
                 }
             }
             if !has_overlap {
@@ -75,9 +127,9 @@ impl Interval {
     }
 
     /**
-     * Dynamic approach with: O(N log N) + O(N)
+     * Dynamic approach with: O(N*log(N)) + O(N) ~ O(N*log(N))
      * (1) Sort the array: O(N log N)
-     * (2) Touch each element and compare to memorized interval: O(N)
+     * (2) Touch each element and compare to a memorized interval: O(N)
      *
      * Memoization technique: We use one interval to memorize all the intervals we've seen. When a
      * interval overlaps with it then we grow this interval. This means for each element, we only
@@ -100,6 +152,7 @@ impl Interval {
             /* Update buffer and skip first check */
             if idx == 0 {
                 span = itr;
+                found = true;
                 continue;
             }
             let has_overlap = Interval::overlaps(&span, &itr);
@@ -184,6 +237,7 @@ fn run_small_examples() {
     let mut interval;
 
     /* Naive approach */
+    println!("[RUN    ] Sanity check: naive approach");
     (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
     assert!(result && interval == Interval::new(0, 3));
     (result, interval) = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
@@ -195,6 +249,7 @@ fn run_small_examples() {
     println!("[SUCCESS] Sanity check: naive approach");
 
     /* dynamic approach */
+    println!("[RUN    ] Sanity check: dynamic approach");
     (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
     assert!(result && interval == Interval::new(0, 3));
     (result, interval) = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
@@ -227,14 +282,54 @@ fn read_from_disk(file: String) -> Vec<Interval> {
         Err(e) => panic!("Could not open file! {}", e),
     };
     for result in rdr.deserialize() {
-        // The iterator yields Result<StringRecord, Error>, so we check the
-        // error here.
         match result {
             Ok(record) => vector.push(record),
             Err(_) => continue,
         };
     }
     vector
+}
+
+fn execute_random_test(n: i32) {
+    /* Random Test Suite */
+    println!("[#######]");
+    println!("[RUN    ] Execute random test");
+    let max_size = 2_i32.pow(20);
+    for _ in 0..n {
+        let mut rng = rand::thread_rng();
+        let mut rand_vec: Vec<Interval> = Vec::new();
+        for _i in 0..1_000_000 {
+            let mut one: i32 = rng.gen_range(0..i32::MAX);
+            let mut two: i32 = rng.gen_range(0..i32::MAX);
+            if one > two {
+                let delta = (one - two).abs() - max_size;
+                if delta > 0 {
+                    one = two + max_size;
+                }
+                rand_vec.push(Interval::new(two, one));
+            } else {
+                let delta = (one - two).abs() - max_size;
+                if delta > 0 {
+                    two = one + max_size;
+                }
+                rand_vec.push(Interval::new(one, two));
+            }
+        }
+        execute_test(&rand_vec);
+    }
+}
+
+fn to_time(duration: Duration) -> String {
+    let hours = ((duration.as_secs() as f32) / 60.0) % 60.0;
+    let minutes = (duration.as_secs() as f32) / 60.0;
+    let micros = duration.as_micros() % 1_000_000;
+    format!(
+        "{:02}:{:02}:{:02}.{:06}",
+        hours,
+        minutes,
+        duration.as_secs(),
+        micros
+    )
 }
 
 fn execute_test(list: &Vec<Interval>) {
@@ -261,11 +356,13 @@ fn execute_test(list: &Vec<Interval>) {
     assert!(naive_result == dynamic_result);
 
     println!(
-        "[EVAL   ] Naive Approach took {} us",
+        "[EVAL   ] Naive Approach took   {} || {:12}us",
+        to_time(naive_duration),
         naive_duration.as_micros()
     );
     println!(
-        "[EVAL   ] Dynamic Approach took {} us",
+        "[EVAL   ] Dynamic Approach took {} || {:12}us",
+        to_time(dynamic_duration),
         dynamic_duration.as_micros()
     );
 }
@@ -290,47 +387,27 @@ fn main() {
 
     /* Test big dataset with overlap  */
     if !args.file_with_overlap.is_empty() {
+        println!("[#######]");
         println!("[RUN    ] Test with overlap");
         let vec = read_from_disk(args.file_with_overlap);
         execute_test(&vec);
         println!("[SUCCESS] Test with overlap");
     } else {
+        println!("[#######]");
         println!("[Skipped] Test with overlap");
     }
 
     /* Test big dataset without overlap  */
     if !args.file_without_overlap.is_empty() {
-        println!("[RUN    ] Test with overlap");
+        println!("[#######]");
+        println!("[RUN    ] Test without overlap");
         let vec = read_from_disk(args.file_without_overlap);
         execute_test(&vec);
-        println!("[SUCCESS] Test with overlap");
+        println!("[SUCCESS] Test without overlap");
     } else {
+        println!("[#######]");
         println!("[Skipped] Test without overlap");
     }
-
-    /* Random Test Suite */
-    println!("[RUN    ] Execute random test");
-    let max_size = 2_i32.pow(22);
-    for _ in 0..args.number_of_rand_runs {
-        let mut rng = rand::thread_rng();
-        let mut rand_vec: Vec<Interval> = Vec::new();
-        for _i in 0..100_000 {
-            let mut one: i32 = rng.gen_range(0..i32::MAX);
-            let mut two: i32 = rng.gen_range(0..i32::MAX);
-            if one > two {
-                let delta = (one - two).abs() - max_size;
-                if delta > 0 {
-                    one = two + max_size;
-                }
-                rand_vec.push(Interval::new(two, one));
-            } else {
-                let delta = (one - two).abs() - max_size;
-                if delta > 0 {
-                    two = one + max_size;
-                }
-                rand_vec.push(Interval::new(one, two));
-            }
-        }
-        execute_test(&rand_vec);
-    }
+    /* Execute N tests with random data*/
+    execute_random_test(args.number_of_rand_runs);
 }
