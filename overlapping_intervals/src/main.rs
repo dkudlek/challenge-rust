@@ -1,50 +1,49 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2022 David Kudlek
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
 /*
-* MIT License
-*
-* Copyright (c) 2022 David Kudlek
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*
-*/
-
-/*
-
-Given a list of intervals:
-We want to know if there's one interval which doesn't overlap with another interval
-
-An interval overlaps if end of one and start of the other are the equal (closed interval, including start and end value)
-e.g.
-- [0, 3] and [1, 2] overlap
-- [0, 3] and [3, 5] overlap
-- [0, 3] and [4, 6] don't overlap
-
-Solutions :
-(1) Naive Solution: O(N * N)
-(2) Dynamic solution: O(N * log(N) + N) ~ O(N*log(N))
-
-Notes:
-- tuple compare compares value by value:
-(1, 2) < (2, 4), because 1 < 2
-(1, 2) < (1, 3), because 1 == 1 and 2 < 3
-(1, 2) > (0, 1), because 1 > 0
-
-
+ *
+ * Given a list of intervals:
+ * We want to know if there's one interval which doesn't overlap with another interval
+ *
+ * An interval overlaps if end of one and start of the other are the equal (closed interval, including start and end value)
+ * e.g.
+ * - [0, 3] and [1, 2] overlap
+ * - [0, 3] and [3, 5] overlap
+ * - [0, 3] and [4, 6] don't overlap
+ *
+ * Solutions :
+ * (1) Naive Solution: O(N * N)
+ * (2) Dynamic solution: O(N * log(N) + N) ~ O(N*log(N))
+ *
+ * Notes:
+ * - tuple compare compares value by value:
+ * (1, 2) < (2, 4), because 1 < 2
+ * (1, 2) < (1, 3), because 1 == 1 and 2 < 3
+ * (1, 2) > (0, 1), because 1 > 0
+ *
+ *
  */
 use clap::Parser;
 use rand::Rng;
@@ -89,11 +88,11 @@ impl Interval {
         false
     }
 
-    fn has_single_interval(list: &Vec<Interval>, mode: &Mode) -> (bool, Interval) {
+    fn has_single_interval(list: &Vec<Interval>, mode: &Mode) -> Option<Interval> {
         if list.is_empty() {
-            return (false, Interval::new(0, 0));
+            return None;
         } else if list.len() == 1 {
-            return (true, list[0].copy());
+            return Some(list[0].copy());
         }
         match mode {
             Mode::Naive => Interval::naive_search(&list),
@@ -108,7 +107,7 @@ impl Interval {
      * Early exit when we find one interval that doesn't overlap with an other interval from the
      * list.
      */
-    fn naive_search(list: &Vec<Interval>) -> (bool, Interval) {
+    fn naive_search(list: &Vec<Interval>) -> Option<Interval> {
         for (idx, itr) in list.iter().enumerate() {
             let mut has_overlap = false;
             for (idx2, itr2) in list.iter().enumerate() {
@@ -120,10 +119,10 @@ impl Interval {
                 }
             }
             if !has_overlap {
-                return (true, itr.copy());
+                return Some(itr.copy());
             }
         }
-        (false, Interval::new(0, 0))
+        None
     }
 
     /**
@@ -139,7 +138,7 @@ impl Interval {
      * Early exit when we find one interval that doesn't overlap with an other interval from the
      * list.
      */
-    fn dynamic_search(list: &Vec<Interval>) -> (bool, Interval) {
+    fn dynamic_search(list: &Vec<Interval>) -> Option<Interval> {
         /* Sort list (and copy) */
         let mut sorted_list = list.to_vec();
         sorted_list.sort();
@@ -164,10 +163,10 @@ impl Interval {
             } else {
                 if idx == 1 {
                     /* First is single */
-                    return (true, span.copy());
+                    return Some(span.copy());
                 } else if idx == idx_max {
                     /* Last is single */
-                    return (true, itr.copy());
+                    return Some(itr.copy());
                 } else if found {
                     /*
                      * Middle is single
@@ -176,14 +175,14 @@ impl Interval {
                      * interval also doesn't overlap with the last one. The last one does not have
                      * an overlap with any other interval.
                      * */
-                    return (true, span.copy());
+                    return Some(span.copy());
                 }
                 span.low = itr.low;
                 span.high = itr.high;
                 found = true;
             }
         }
-        (false, Interval::new(0, 0))
+        None
     }
 }
 
@@ -234,31 +233,29 @@ fn run_small_examples() {
         Interval::new(4, 6),
     ];
     let mut result;
-    let mut interval;
 
     /* Naive approach */
     println!("[RUN    ] Sanity check: naive approach");
-    (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
-    assert!(result && interval == Interval::new(0, 3));
-    (result, interval) = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
-    assert!(result && interval == Interval::new(25, 50));
-    (result, interval) = Interval::has_single_interval(&unmatched_middle, &Mode::Naive);
-    assert!(result && interval == Interval::new(7, 9));
-    (result, _) = Interval::has_single_interval(&matched, &Mode::Naive);
-    assert!(!result);
+    result = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
+    assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
+    result = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
+    assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
+    result = Interval::has_single_interval(&unmatched_middle, &Mode::Naive);
+    assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
+    result = Interval::has_single_interval(&matched, &Mode::Naive);
+    assert!(result.is_none());
     println!("[SUCCESS] Sanity check: naive approach");
 
     /* dynamic approach */
     println!("[RUN    ] Sanity check: dynamic approach");
-    (result, interval) = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
-    assert!(result && interval == Interval::new(0, 3));
-    (result, interval) = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
-    assert!(result && interval == Interval::new(25, 50));
-    (result, interval) =
-        Interval::has_single_interval(&unmatched_middle, &Mode::DynamicProgramming);
-    assert!(result && interval == Interval::new(7, 9));
-    (result, _) = Interval::has_single_interval(&matched, &Mode::Naive);
-    assert!(!result);
+    result = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
+    assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
+    result = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
+    assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
+    result = Interval::has_single_interval(&unmatched_middle, &Mode::DynamicProgramming);
+    assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
+    result = Interval::has_single_interval(&matched, &Mode::Naive);
+    assert!(result.is_none());
     println!("[SUCCESS] Sanity check: dynamic approach");
 }
 
@@ -295,8 +292,8 @@ fn execute_random_test(n: i32) {
     println!("[#######]");
     println!("[RUN    ] Execute random test");
     let max_size = 2_i32.pow(20);
+    let mut rng = rand::thread_rng();
     for _ in 0..n {
-        let mut rng = rand::thread_rng();
         let mut rand_vec: Vec<Interval> = Vec::new();
         for _i in 0..1_000_000 {
             let mut one: i32 = rng.gen_range(0..i32::MAX);
@@ -324,7 +321,7 @@ fn to_time(duration: Duration) -> String {
     let minutes = (duration.as_secs() as f32) / 60.0;
     let micros = duration.as_micros() % 1_000_000;
     format!(
-        "{:02}:{:02}:{:02}.{:06}",
+        "{:02.0}:{:02.0}:{:02.0}.{:06}",
         hours,
         minutes,
         duration.as_secs(),
@@ -336,21 +333,21 @@ fn execute_test(list: &Vec<Interval>) {
     println!("[RUN    ] Execute test: naive approach");
     let naive_result;
     let naive_start = Instant::now();
-    (naive_result, _) = Interval::has_single_interval(&list, &Mode::Naive);
+    naive_result = Interval::has_single_interval(&list, &Mode::Naive);
     let naive_duration = naive_start.elapsed();
     println!(
         "[SUCCESS] Execute test: naive approach with '{}'",
-        naive_result
+        naive_result.is_some()
     );
 
     println!("[RUN    ] Execute test: dynamic approach");
     let dynamic_result;
     let dynamic_start = Instant::now();
-    (dynamic_result, _) = Interval::has_single_interval(&list, &Mode::DynamicProgramming);
+    dynamic_result = Interval::has_single_interval(&list, &Mode::DynamicProgramming);
     let dynamic_duration = dynamic_start.elapsed();
     println!(
         "[SUCCESS] Execute test: dynamic approach with '{}'",
-        dynamic_result
+        dynamic_result.is_some()
     );
 
     assert!(naive_result == dynamic_result);
