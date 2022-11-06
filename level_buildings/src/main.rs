@@ -62,6 +62,7 @@
  *            = 15 - 6 - (5 - 1 - 2) * 3 = 9 - (2 * 3) = 3
  *
  */
+use clap::Parser;
 use rand::Rng;
 use std::time::Duration;
 use std::time::Instant;
@@ -315,7 +316,59 @@ fn sanity_check() {
     println!("[SUCCESS] Sanity check: Single Element");
 }
 
+/*
+fn write_to_disk(list: &Vec<i32>) {
+    let mut wtr = match csv::Writer::from_path("sample.csv") {
+        Ok(file_wrt) => file_wrt,
+        Err(e) => panic!("Could not open file! {}", e),
+    };
+    for itr in list {
+        let _ = wtr.serialize(itr);
+    }
+    let _ = wtr.flush();
+}
+*/
+
+fn read_from_disk(file: String) -> Vec<i32> {
+    let mut vector = vec![];
+    let mut rdr = match csv::Reader::from_path(file) {
+        Ok(file_rdr) => file_rdr,
+        Err(e) => panic!("Could not open file! {}", e),
+    };
+    for result in rdr.deserialize() {
+        match result {
+            Ok(record) => vector.push(record),
+            Err(_) => continue,
+        };
+    }
+    vector
+}
+
+#[derive(Parser)]
+struct Cli {
+    /// The pattern to look for
+    #[arg(short, long, default_value = "sample.csv")]
+    file: String,
+    /// Number of rand runs
+    #[arg(short, long, default_value = "0")]
+    number_of_rand_runs: i32,
+}
+
 fn main() {
+    let args = Cli::parse();
     sanity_check();
-    execute_random_test(3);
+
+    /* Test big dataset with overlap  */
+    if !args.file.is_empty() {
+        println!("[#######]");
+        println!("[RUN    ] Test with sample file");
+        let vec = read_from_disk(args.file);
+        execute_test(&vec);
+        println!("[SUCCESS] Test with sample file");
+    } else {
+        println!("[#######]");
+        println!("[Skipped] Test with sample file");
+    }
+
+    execute_random_test(args.number_of_rand_runs);
 }
