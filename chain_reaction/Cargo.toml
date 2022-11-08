@@ -1,15 +1,8 @@
 [package]
-name = "challenge-rust"
+name = "chain_reaction"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-[workspace]
-members=[
-    "overlapping_intervals",
-    "level_buildings",
-	"chain_reaction",
-]
