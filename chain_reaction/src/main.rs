@@ -6,7 +6,7 @@ use std::{
 struct FunElement {
     idx: usize,          // array idx
     next_element: usize, // idx + 1
-    fun_val: i32,
+    fun_val: i64,
 }
 
 impl Ord for FunElement {
@@ -48,11 +48,10 @@ fn read() -> String {
         .read_line(&mut input_str)
         .ok()
         .expect("Failed to read from input!");
-    println!("{}", input_str);
-    input_str
+    input_str.trim().to_string()
 }
 
-fn execute(fun_val: Vec<i32>, next_ptr: Vec<usize>) -> i32 {
+fn execute(fun_val: Vec<i64>, next_ptr: Vec<usize>) -> i128 {
     if fun_val.len() != next_ptr.len() {
         panic!("Lists must have the same length!");
     }
@@ -72,36 +71,39 @@ fn execute(fun_val: Vec<i32>, next_ptr: Vec<usize>) -> i32 {
     let mut new_order: Vec<usize> = fun_elements.iter().map(|el| el.idx).collect();
     new_order.reverse();
 
-    let mut fun_sum = 0;
+    let mut fun_sum: i128 = 0;
     for vec_id in 0..new_order.len() {
         let curr_id = new_order[vec_id];
         if vec_id == (new_order.len() - 1) {
-            fun_sum += fun_val_copy[curr_id];
+            fun_sum += i128::from(fun_val_copy[curr_id]);
             break;
         }
         let next_id = new_order[vec_id + 1];
-        if next_ptr[curr_id] == next_ptr[next_id] {
+        if next_ptr[curr_id] == 0 {
+            fun_sum += i128::from(fun_val_copy[curr_id]);
+            continue;
+        } else if next_ptr[curr_id] == next_ptr[next_id] {
             // drop or swap
             if fun_val_copy[curr_id] >= fun_val_copy[next_id] {
                 // drop
-                fun_sum += fun_val_copy[curr_id];
+                fun_sum += i128::from(fun_val_copy[curr_id]);
                 continue;
             } else {
                 // swap
-                fun_sum += fun_val_copy[next_id];
-                new_order[next_id] = new_order[curr_id];
+                fun_sum += i128::from(fun_val_copy[next_id]);
+                fun_val_copy[next_id] = fun_val_copy[curr_id];
                 continue;
             }
         } else {
             if next_ptr[curr_id] == 0 {
                 // drop source
-                fun_sum += fun_val[curr_id];
+                fun_sum += i128::from(fun_val[curr_id]);
                 continue;
             } else {
                 // merge
                 let merge_candidate: usize = next_ptr[curr_id] - 1;
                 fun_val_copy[merge_candidate] =
-                    max(fun_val_copy[merge_candidate], fun_val[curr_id]);
+                    max(fun_val_copy[merge_candidate], fun_val_copy[curr_id]);
                 continue;
             }
         }
@@ -109,51 +111,111 @@ fn execute(fun_val: Vec<i32>, next_ptr: Vec<usize>) -> i32 {
     fun_sum
 }
 
-fn main() {
-    /*
-    let number_of_testcases = read()
-        .parse::<i32>()
-        .expect("Number of test cases must be an integer!");
+fn test_equality() {
+    let el1 = FunElement {
+        idx: 1,
+        next_element: 1,
+        fun_val: 50,
+    };
+    let el2 = FunElement {
+        idx: 1,
+        next_element: 1,
+        fun_val: 40,
+    };
+    let el3 = FunElement {
+        idx: 1,
+        next_element: 2,
+        fun_val: 40,
+    };
+    let el4 = FunElement {
+        idx: 1,
+        next_element: 2,
+        fun_val: 50,
+    };
 
-    for _ in 0..number_of_testcases {
-        let _ = read()
-            .parse::<i32>()
-            .expect("Must be a string with integer numbers!");
-        let fun_values: Vec<i32> = read()
-            .split_whitespace()
-            .map(|s| s.parse::<i32>().ok().expect("parse error"))
-            .collect();
-        let _ = read()
-            .parse::<i32>()
-            .expect("Must be a string with integer numbers!");
-        let pointer_values: Vec<i32> = read()
-            .split_whitespace()
-            .map(|s| s.parse::<i32>().ok().expect("parse error"))
-            .collect();
-        let mut funElements: Vec<FunElement> = fun_values
-            .iter()
-            .zip(pointer_values.iter())
-            .map(|(a, b)| FunElement {
-                next_element: *a,
-                fun_val: *b,
-            })
-            .collect();
-        funElements.sort();
-        for el in funElements {
-            println!("{} {}", el.next_element, el.fun_val);
-        }
+    assert!(el1 == el1);
+    assert!(el2 < el1);
+    assert!(el1 < el3);
+    assert!(el4 > el2);
+    assert!(el1 > el2);
+}
+
+fn test_runs() {
+    let mut fun_values: Vec<i64> = vec![50];
+    let mut pointer_values: Vec<usize> = vec![0];
+
+    assert!(execute(fun_values, pointer_values) == 50);
+    fun_values = vec![50, 40];
+    pointer_values = vec![0, 1];
+    assert!(execute(fun_values, pointer_values) == 50);
+
+    fun_values = vec![50, 40];
+    pointer_values = vec![0, 0];
+    assert!(execute(fun_values, pointer_values) == 90);
+
+    fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
+    pointer_values = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    assert!(execute(fun_values, pointer_values) == 550);
+
+    fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
+    pointer_values = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    assert!(execute(fun_values, pointer_values) == 100);
+
+    fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
+    pointer_values = vec![9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+    assert!(execute(fun_values, pointer_values) == 100);
+
+    fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
+    pointer_values = vec![0, 1, 2, 3, 4, 0, 6, 7, 8, 9];
+    assert!(execute(fun_values, pointer_values) == 150);
+
+    fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
+    pointer_values = vec![0, 1, 0, 3, 0, 5, 0, 7, 0, 9];
+    assert!(execute(fun_values, pointer_values) == 300);
+
+    let max_val: i64 = 10i64.pow(9);
+    fun_values = vec![];
+    pointer_values = vec![];
+    for _ in 0..1000 {
+        fun_values.push(max_val);
+        pointer_values.push(0);
     }
-    */
-    let result_one = execute(vec![60, 20, 40, 50], vec![0, 1, 1, 2]);
-    assert!(result_one == 110);
-    println!("Fun sum is {}", result_one);
-    let result_two = execute(vec![3, 2, 1, 4, 5], vec![0, 1, 1, 1, 0]);
-    println!("Fun sum is {}", result_two);
-    assert!(result_two == 14);
-    let result_three = execute(
-        vec![100, 100, 100, 90, 80, 100, 90, 100],
-        vec![0, 1, 2, 1, 2, 3, 1, 3],
-    );
-    println!("Fun sum is {}", result_three);
-    assert!(result_three == 490);
+    assert!(execute(fun_values, pointer_values) == i128::from(max_val) * 1000);
+}
+
+/* Input
+3
+4
+60 20 40 50
+0 1 1 2
+5
+3 2 1 4 5
+0 1 1 1 0
+8
+100 100 100 90 80 100 90 100
+0 1 2 1 2 3 1 3
+*/
+fn main() {
+    /* Test data structure */
+    test_equality();
+    //test_runs();
+    /* Read from command line */
+    let number_of_testcases = read()
+        .parse::<i64>()
+        .expect("Number of test cases must be an integer!");
+    for idx in 0..number_of_testcases {
+        let _ = read()
+            .parse::<i64>()
+            .expect("Must be a string with integer numbers!");
+        let fun_values: Vec<i64> = read()
+            .split_whitespace()
+            .map(|s| s.parse::<i64>().ok().expect("parse error"))
+            .collect();
+        let pointer_values: Vec<usize> = read()
+            .split_whitespace()
+            .map(|s| s.parse::<usize>().ok().expect("parse error"))
+            .collect();
+        let result = execute(fun_values, pointer_values);
+        println!("Case #{}: {}", idx + 1, result);
+    }
 }
