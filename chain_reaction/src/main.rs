@@ -1,3 +1,59 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2022 David Kudlek
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
+/**
+ * Chain reaction google coding competition
+ * https://codingcompetitions.withgoogle.com/codejam/round/0000000000876ff1/0000000000a45ef7
+ *
+ * Given an element, list, tree or forest. Each element has an fun value and points to another element or into the void (0).
+ * The value of one tree is the maximum of all nodes on a single path.
+ * If more than one element points to the same node then you have to pick one whose path get executed. The other elements point into the void from there.
+ * In other words. You start executing one path from the botton and then you see which path you can still use.
+ * The total fun value is the sum of all tree values.
+ *
+ * Example:
+ * fun_value = 60 20 40 50
+ * next_pointer = 0 1 1 2
+ * idx = 1 2 3 4
+ *
+ * 1 points into the void. 2 and 3 point to 1 and 4 points to 2. There are two ways to execute the tree. Start at 4 or start at 3.
+ * If we start at 3 then we execute 3 and 1 => max(40,60) = 60. 2 now points into the void and we execute 4 and 2 => max(50,20) = 50. The sum is 110.
+ * If we start at 4 then we execute 4,2 and 1 => max(50,20,60) = 60. It remains 3 with value 40. The sum is 110.
+ * Starting at 3 yields more fun in is therby better.
+ *
+ *
+ * Solution with Total: O(N) + O(N log N) + O(N) = O(N log N)
+ * - Create temporary structure: Time is O(N) and Space is O(N)
+ * - Sort with next_idx[i-1] must be smaller then next_idx[1] and fun_value[i-1] must be smaller than fun_value[i]: O(N log N)
+ * - Start from the highest index and merge, drop or swap: O(N)
+ *   - If the current node is the only one that points to the next element then store the fun_value = max(fun_value[i], fun_value[next_ptr])
+ *   - If more than one node points to the next element then:
+ *     - If the value is higher than the next value then drop the element and add the fun_value to the sum
+ *     - If the value is smaller than the next value then swap then drop the next element and copy the current element at it's place
+ *   - If the node points into the void then drop it and add the fun value to the sum
+ */
 use std::{
     cmp::{max, Ordering},
     io,
