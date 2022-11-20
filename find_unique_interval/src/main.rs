@@ -1,50 +1,25 @@
-/**
- * MIT License
- *
- * Copyright (c) 2022 David Kudlek
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- */
-/*
- *
- * Given a list of intervals:
- * We want to know if there's one interval which doesn't overlap with another interval
- *
- * An interval overlaps if end of one and start of the other are the equal (closed interval, including start and end value)
- * e.g.
- * - [0, 3] and [1, 2] overlap
- * - [0, 3] and [3, 5] overlap
- * - [0, 3] and [4, 6] don't overlap
- *
- * Solutions :
- * (1) Naive Solution: O(N * N)
- * (2) Dynamic solution: O(N * log(N) + N) ~ O(N*log(N))
- *
- * Notes:
- * - tuple compare compares value by value:
- * (1, 2) < (2, 4), because 1 < 2
- * (1, 2) < (1, 3), because 1 == 1 and 2 < 3
- * (1, 2) > (0, 1), because 1 > 0
- *
- *
- */
+/// MIT License
+///
+/// Copyright (c) 2022 David Kudlek
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+///
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+///
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
+///
 use clap::Parser;
 use rand::Rng;
 use serde::Deserialize;
@@ -52,6 +27,7 @@ use serde::Serialize;
 use std::time::Duration;
 use std::time::Instant;
 
+/// An Interval structure containing the lower and upper boound
 #[derive(Eq, PartialEq, PartialOrd, Ord, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub(crate) struct Interval {
@@ -100,13 +76,11 @@ impl Interval {
         }
     }
 
-    /**
-     * Naive approach with: O(N * N)
-     *
-     * Compare each intervale with all other intervals.
-     * Early exit when we find one interval that doesn't overlap with an other interval from the
-     * list.
-     */
+    /// Naive approach with: O(N * N)
+    ///
+    /// Compare each intervale with all other intervals.
+    /// Early exit when we find one interval that doesn't overlap with an other interval from the
+    /// list.
     fn naive_search(list: &Vec<Interval>) -> Option<Interval> {
         for (idx, itr) in list.iter().enumerate() {
             let mut has_overlap = false;
@@ -125,30 +99,28 @@ impl Interval {
         None
     }
 
-    /**
-     * Dynamic approach with: O(N*log(N)) + O(N) ~ O(N*log(N))
-     * (1) Sort the array: O(N log N)
-     * (2) Touch each element and compare to a memorized interval: O(N)
-     *
-     * Memoization technique: We use one interval to memorize all the intervals we've seen. When a
-     * interval overlaps with it then we grow this interval. This means for each element, we only
-     * need to compare against this interval. If it doesn't overlap then we create a new interval.
-     * If this is the last element or the next element does not overlap then we found an interval
-     * that doesn't overlap with any other interval.
-     * Early exit when we find one interval that doesn't overlap with an other interval from the
-     * list.
-     */
+    /// Dynamic approach with: O(N*log(N)) + O(N) ~ O(N*log(N))
+    /// (1) Sort the array: O(N log N)
+    /// (2) Touch each element and compare to a memorized interval: O(N)
+    ///
+    /// Memoization technique: We use one interval to memorize all the intervals we've seen. When a
+    /// interval overlaps with it then we grow this interval. This means for each element, we only
+    /// need to compare against this interval. If it doesn't overlap then we create a new interval.
+    /// If this is the last element or the next element does not overlap then we found an interval
+    /// that doesn't overlap with any other interval.
+    /// Early exit when we find one interval that doesn't overlap with an other interval from the
+    /// list.
     fn dynamic_search(list: &Vec<Interval>) -> Option<Interval> {
-        /* Sort list (and copy) */
+        // Sort list (and copy)
         let mut sorted_list = list.to_vec();
         sorted_list.sort();
 
-        /* Initialize other helper variables */
+        // Initialize other helper variables
         let mut span = Interval::new(0, 0);
         let mut found = false;
         let idx_max = sorted_list.len() - 1;
         for (idx, itr) in sorted_list.into_iter().enumerate() {
-            /* Update buffer and skip first check */
+            // Update buffer and skip first check
             if idx == 0 {
                 span = itr;
                 found = true;
@@ -162,19 +134,17 @@ impl Interval {
                 found = false;
             } else {
                 if idx == 1 {
-                    /* First is single */
+                    // First is single
                     return Some(span.copy());
                 } else if idx == idx_max {
-                    /* Last is single */
+                    // Last is single
                     return Some(itr.copy());
                 } else if found {
-                    /*
-                     * Middle is single
-                     *
-                     * The last interval did't overlap with the temporary interval and the current
-                     * interval also doesn't overlap with the last one. The last one does not have
-                     * an overlap with any other interval.
-                     * */
+                    // Middle is single
+                    //
+                    // The last interval did't overlap with the temporary interval and the current
+                    // interval also doesn't overlap with the last one. The last one does not have
+                    // an overlap with any other interval.
                     return Some(span.copy());
                 }
                 span.low = itr.low;
@@ -186,80 +156,7 @@ impl Interval {
     }
 }
 
-fn run_sanity_check() {
-    /* Sanity check  */
-    println!("[RUN    ] Sanity check");
-    let interval_a = Interval::new(0, 4);
-    let interval_b = Interval::new(3, 5);
-    let interval_c = Interval::new(4, 5);
-    let interval_d = Interval::new(6, 7);
-
-    /* Test helper functions  */
-    println!("[RUN    ] Test helper functions");
-    assert!(Interval::overlaps(&interval_a, &interval_b));
-    assert!(Interval::overlaps(&interval_b, &interval_c));
-    assert!(Interval::overlaps(&interval_a, &interval_a));
-
-    assert!(!Interval::overlaps(&interval_a, &interval_d));
-    assert!(!Interval::overlaps(&interval_b, &interval_d));
-    assert!(!Interval::overlaps(&interval_c, &interval_d));
-    println!("[SUCCESS] Test helper functions");
-}
-
-fn run_small_examples() {
-    let unmatched_first = vec![
-        Interval::new(0, 3),
-        Interval::new(4, 6),
-        Interval::new(5, 7),
-        Interval::new(7, 10),
-    ];
-    let unmatched_last = vec![
-        Interval::new(4, 6),
-        Interval::new(5, 7),
-        Interval::new(7, 10),
-        Interval::new(25, 50),
-    ];
-    let unmatched_middle = vec![
-        Interval::new(3, 5),
-        Interval::new(4, 6),
-        Interval::new(7, 9),
-        Interval::new(10, 30),
-        Interval::new(10, 20),
-    ];
-    let matched = vec![
-        Interval::new(1, 3),
-        Interval::new(2, 4),
-        Interval::new(3, 5),
-        Interval::new(4, 6),
-    ];
-    let mut result;
-
-    /* Naive approach */
-    println!("[RUN    ] Sanity check: naive approach");
-    result = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
-    assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
-    result = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
-    assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
-    result = Interval::has_single_interval(&unmatched_middle, &Mode::Naive);
-    assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
-    result = Interval::has_single_interval(&matched, &Mode::Naive);
-    assert!(result.is_none());
-    println!("[SUCCESS] Sanity check: naive approach");
-
-    /* dynamic approach */
-    println!("[RUN    ] Sanity check: dynamic approach");
-    result = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
-    assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
-    result = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
-    assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
-    result = Interval::has_single_interval(&unmatched_middle, &Mode::DynamicProgramming);
-    assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
-    result = Interval::has_single_interval(&matched, &Mode::Naive);
-    assert!(result.is_none());
-    println!("[SUCCESS] Sanity check: dynamic approach");
-}
-
-/*
+#[allow(dead_code)]
 fn write_to_disk(list: &Vec<Interval>) {
     let mut wtr = match csv::Writer::from_path("no_overlap.csv") {
         Ok(file_wrt) => file_wrt,
@@ -270,7 +167,6 @@ fn write_to_disk(list: &Vec<Interval>) {
     }
     let _ = wtr.flush();
 }
-*/
 
 fn read_from_disk(file: String) -> Vec<Interval> {
     let mut vector = vec![];
@@ -288,7 +184,7 @@ fn read_from_disk(file: String) -> Vec<Interval> {
 }
 
 fn execute_random_test(n: i32) {
-    /* Random Test Suite */
+    // Random Test Suite
     println!("[#######]");
     println!("[RUN    ] Execute random test");
     let max_size = 2_i32.pow(20);
@@ -366,23 +262,40 @@ fn execute_test(list: &Vec<Interval>) {
 
 #[derive(Parser)]
 struct Cli {
-    /// The pattern to look for
+    // The pattern to look for
     #[arg(long, default_value = "")]
     file_with_overlap: String,
-    /// The path to the file to read
+    // The path to the file to read
     #[arg(long, default_value = "")]
     file_without_overlap: String,
     #[arg(long, default_value = "0")]
     number_of_rand_runs: i32,
 }
 
+/// # Find unique interval in list of intervals
+///
+/// Given a list of intervals:
+/// We want to know if there's one interval which doesn't overlap with another interval
+///
+/// An interval overlaps if end of one and start of the other are the equal (closed interval, including start and end value)
+/// e.g.
+/// - ``[0, 3]`` and ``[1, 2]`` overlap
+/// - ``[0, 3]`` and ``[3, 5]`` overlap
+/// - ``[0, 3]`` and ``[4, 6]`` don't overlap
+///
+/// # Solutions :
+/// 1. Naive Solution: ``O(N * N)``
+/// 2. Dynamic solution: ``O(N * log(N) + N) ~ O(N*log(N))``
+///
+/// # Deliberations:
+/// - tuple compare compares value by value:
+///   - ``(1, 2) < (2, 4)``, because ``1 < 2``
+///   - ``(1, 2) < (1, 3)``, because ``1 == 1 and 2 < 3``
+///   - ``(1, 2) > (0, 1)``, because ``1 > 0``
 fn main() {
     let args = Cli::parse();
 
-    run_sanity_check();
-    run_small_examples();
-
-    /* Test big dataset with overlap  */
+    // Test big dataset with overlap
     if !args.file_with_overlap.is_empty() {
         println!("[#######]");
         println!("[RUN    ] Test with overlap");
@@ -394,7 +307,7 @@ fn main() {
         println!("[Skipped] Test with overlap");
     }
 
-    /* Test big dataset without overlap  */
+    // Test big dataset without overlap
     if !args.file_without_overlap.is_empty() {
         println!("[#######]");
         println!("[RUN    ] Test without overlap");
@@ -405,6 +318,87 @@ fn main() {
         println!("[#######]");
         println!("[Skipped] Test without overlap");
     }
-    /* Execute N tests with random data*/
+    // Execute N tests with random data
     execute_random_test(args.number_of_rand_runs);
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn run_sanity_check() {
+        // Sanity check
+        println!("[RUN    ] Sanity check");
+        let interval_a = Interval::new(0, 4);
+        let interval_b = Interval::new(3, 5);
+        let interval_c = Interval::new(4, 5);
+        let interval_d = Interval::new(6, 7);
+
+        // Test helper functions
+        println!("[RUN    ] Test helper functions");
+        assert!(Interval::overlaps(&interval_a, &interval_b));
+        assert!(Interval::overlaps(&interval_b, &interval_c));
+        assert!(Interval::overlaps(&interval_a, &interval_a));
+
+        assert!(!Interval::overlaps(&interval_a, &interval_d));
+        assert!(!Interval::overlaps(&interval_b, &interval_d));
+        assert!(!Interval::overlaps(&interval_c, &interval_d));
+        println!("[SUCCESS] Test helper functions");
+    }
+
+    #[test]
+    fn run_small_examples() {
+        let unmatched_first = vec![
+            Interval::new(0, 3),
+            Interval::new(4, 6),
+            Interval::new(5, 7),
+            Interval::new(7, 10),
+        ];
+        let unmatched_last = vec![
+            Interval::new(4, 6),
+            Interval::new(5, 7),
+            Interval::new(7, 10),
+            Interval::new(25, 50),
+        ];
+        let unmatched_middle = vec![
+            Interval::new(3, 5),
+            Interval::new(4, 6),
+            Interval::new(7, 9),
+            Interval::new(10, 30),
+            Interval::new(10, 20),
+        ];
+        let matched = vec![
+            Interval::new(1, 3),
+            Interval::new(2, 4),
+            Interval::new(3, 5),
+            Interval::new(4, 6),
+        ];
+        let mut result;
+
+        // Naive approach
+        println!("[RUN    ] Sanity check: naive approach");
+        result = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
+        assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
+        result = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
+        assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
+        result = Interval::has_single_interval(&unmatched_middle, &Mode::Naive);
+        assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
+        result = Interval::has_single_interval(&matched, &Mode::Naive);
+        assert!(result.is_none());
+        println!("[SUCCESS] Sanity check: naive approach");
+
+        // dynamic approach
+        println!("[RUN    ] Sanity check: dynamic approach");
+        result = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
+        assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
+        result = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
+        assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
+        result = Interval::has_single_interval(&unmatched_middle, &Mode::DynamicProgramming);
+        assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
+        result = Interval::has_single_interval(&matched, &Mode::Naive);
+        assert!(result.is_none());
+        println!("[SUCCESS] Sanity check: dynamic approach");
+    }
 }

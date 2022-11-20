@@ -38,10 +38,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chain_reaction"
-version = "0.1.0"
-
-[[package]]
 name = "challenge-rust"
 version = "0.1.0"
 
@@ -102,6 +98,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "explore_dungeon"
+version = "0.1.0"
+dependencies = [
+ "rand",
+]
+
+[[package]]
+name = "find_unique_interval"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "csv",
+ "rand",
+ "serde",
 ]
 
 [[package]]
@@ -175,16 +188,6 @@ name = "os_str_bytes"
 version = "6.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
-
-[[package]]
-name = "overlapping_intervals"
-version = "0.1.0"
-dependencies = [
- "clap",
- "csv",
- "rand",
- "serde",
-]
 
 [[package]]
 name = "ppv-lite86"
@@ -295,6 +298,10 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "start_chain_reaction"
+version = "0.1.0"
 
 [[package]]
 name = "strsim"
