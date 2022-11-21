@@ -58,8 +58,6 @@ impl Interval {
     fn overlaps(lhs: &Interval, rhs: &Interval) -> bool {
         if rhs.low <= lhs.high && rhs.high >= lhs.low {
             return true;
-        } else if lhs.low <= rhs.high && lhs.high >= rhs.low {
-            return true;
         }
         false
     }
