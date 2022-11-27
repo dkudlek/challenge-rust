@@ -117,22 +117,16 @@ fn execute(fun_val: Vec<i64>, next_ptr: Vec<usize>) -> i128 {
                 continue;
             }
         } else {
-            if next_ptr[curr_id] == 0 {
-                // drop source
-                fun_sum += i128::from(fun_val[curr_id]);
-                continue;
-            } else {
-                // merge
-                let merge_candidate: usize = next_ptr[curr_id] - 1;
-                #[cfg(trace)]
-                println!(
-                    "{} {}",
-                    fun_val_copy[merge_candidate], fun_val_copy[curr_id]
-                );
-                fun_val_copy[merge_candidate] =
-                    max(fun_val_copy[merge_candidate], fun_val_copy[curr_id]);
-                continue;
-            }
+            // merge
+            let merge_candidate: usize = next_ptr[curr_id] - 1;
+            #[cfg(trace)]
+            println!(
+                "{} {}",
+                fun_val_copy[merge_candidate], fun_val_copy[curr_id]
+            );
+            fun_val_copy[merge_candidate] =
+                max(fun_val_copy[merge_candidate], fun_val_copy[curr_id]);
+            continue;
         }
     }
     fun_sum
@@ -206,6 +200,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use std::string;
+
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
@@ -240,52 +236,73 @@ mod tests {
     }
 
     #[test]
-    fn test_single() {
-        let fun_values: Vec<i64> = vec![50];
-        let pointer_values: Vec<usize> = vec![0];
-        assert_eq!(execute(fun_values, pointer_values), 50);
+    fn test_all() {
+        struct Test {
+            name: String,
+            fun_values: Vec<i64>,
+            pointer_values: Vec<usize>,
+            want: i128,
+        };
+        let tests = vec![
+            Test {
+                name: "single value".to_string(),
+                fun_values: vec![50],
+                pointer_values: vec![0],
+                want: 50,
+            },
+            Test {
+                name: "Two in a row".to_string(),
+                fun_values: vec![50, 40],
+                pointer_values: vec![0, 1],
+                want: 50,
+            },
+            Test {
+                name: "Ten parallel".to_string(),
+                fun_values: vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+                pointer_values: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                want: 100,
+            },
+            Test {
+                name: "Multi subtree".to_string(),
+                fun_values: vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+                pointer_values: vec![0, 1, 2, 3, 4, 0, 6, 7, 8, 9],
+                want: 150,
+            },
+            Test {
+                name: "More Multi subtree".to_string(),
+                fun_values: vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+                pointer_values: vec![0, 1, 0, 3, 0, 5, 0, 7, 0, 9],
+                want: 300,
+            },
+            Test {
+                name: "More Multi subtree".to_string(),
+                fun_values: vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+                pointer_values: vec![0, 1, 0, 3, 0, 5, 0, 7, 0, 9],
+                want: 300,
+            },
+            Test {
+                name: "Execute merge".to_string(),
+                fun_values: vec![30, 40, 50, 60],
+                pointer_values: vec![0, 1, 1, 2],
+                want: 110,
+            },
+            Test {
+                name: "Execute drop".to_string(),
+                fun_values: vec![30, 40, 50],
+                pointer_values: vec![0, 1, 1],
+                want: 90,
+            },
+        ];
+        for t in tests {
+            let result = execute(t.fun_values, t.pointer_values);
+            assert_eq!(result, t.want, "{}", t.name);
+        }
     }
 
     #[test]
-    fn test_row2() {
-        let fun_values = vec![50, 40];
-        let pointer_values = vec![0, 1];
-        assert_eq!(execute(fun_values, pointer_values), 50);
-    }
-
-    #[test]
-    fn test_parallel2() {
-        let fun_values = vec![50, 40];
-        let pointer_values = vec![0, 0];
-        assert_eq!(execute(fun_values, pointer_values), 90);
-    }
-
-    #[test]
-    fn test_parallel10() {
-        let fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-        let pointer_values = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        assert_eq!(execute(fun_values, pointer_values), 550);
-    }
-
-    #[test]
-    fn test_row10() {
-        let fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-        let pointer_values = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-        assert_eq!(execute(fun_values, pointer_values), 100);
-    }
-
-    #[test]
-    fn test_multi_subtree2() {
-        let fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-        let pointer_values = vec![0, 1, 2, 3, 4, 0, 6, 7, 8, 9];
-        assert_eq!(execute(fun_values, pointer_values), 150);
-    }
-
-    #[test]
-    fn test_multi_subtree5() {
-        let fun_values = vec![100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-        let pointer_values = vec![0, 1, 0, 3, 0, 5, 0, 7, 0, 9];
-        assert_eq!(execute(fun_values, pointer_values), 300);
+    #[should_panic]
+    fn test_panic() {
+        execute(vec![30, 40, 50, 60], vec![0, 1, 1]);
     }
 
     #[test]

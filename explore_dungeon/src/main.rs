@@ -200,6 +200,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    /*
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
     use rand::Rng;
@@ -276,6 +277,7 @@ mod tests {
         );
     }
 
+
     /// Test ``(o-o)``
     #[test]
     fn test_smallest_example() {
@@ -287,30 +289,29 @@ mod tests {
         };
         run_dungeon(&dungeon);
     }
+        /// Test ``(o-o-o)``
+        #[test]
+        fn test_n3_min() {
+            let test = vec![vec![2], vec![1, 3], vec![2]];
+            let dungeon = Dungeon {
+                number_of_actions: 2,
+                total_unique_passages: 2,
+                rooms: test,
+            };
+            run_dungeon(&dungeon);
+        }
 
-    /// Test ``(o-o-o)``
-    #[test]
-    fn test_n3_min() {
-        let test = vec![vec![2], vec![1, 3], vec![2]];
-        let dungeon = Dungeon {
-            number_of_actions: 2,
-            total_unique_passages: 2,
-            rooms: test,
-        };
-        run_dungeon(&dungeon);
-    }
-
-    /// Test ``(o-o-o)``
-    #[test]
-    fn test_n3_max() {
-        let test = vec![vec![2, 3], vec![1, 3], vec![1, 2]];
-        let dungeon = Dungeon {
-            number_of_actions: 2,
-            total_unique_passages: 3,
-            rooms: test,
-        };
-        run_dungeon(&dungeon);
-    }
+        /// Test ``(o-o-o)``
+        #[test]
+        fn test_n3_max() {
+            let test = vec![vec![2, 3], vec![1, 3], vec![1, 2]];
+            let dungeon = Dungeon {
+                number_of_actions: 2,
+                total_unique_passages: 3,
+                rooms: test,
+            };
+            run_dungeon(&dungeon);
+        }
 
     /// 1 connects to 2, 3 and 5
     /// 2 connects to 1 and 3
@@ -342,4 +343,5 @@ mod tests {
         };
         run_dungeon(&dungeon);
     }
+        */
 }
