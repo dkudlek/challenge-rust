@@ -176,6 +176,7 @@ fn execute(fun_val: Vec<i64>, next_ptr: Vec<usize>) -> i128 {
 /// 100 100 100 90 80 100 90 100
 /// 0 1 2 1 2 3 1 3
 /// ```
+#[cfg(not(tarpaulin_include))]
 fn main() {
     /* Read from command line */
     let number_of_testcases = read()
@@ -200,7 +201,6 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use std::string;
 
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
@@ -242,7 +242,7 @@ mod tests {
             fun_values: Vec<i64>,
             pointer_values: Vec<usize>,
             want: i128,
-        };
+        }
         let tests = vec![
             Test {
                 name: "single value".to_string(),

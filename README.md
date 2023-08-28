@@ -1,92 +1,196 @@
 # challenge-rust
 
+build all: 
+
+``cargo tarpaulin --ignore-tests --out Lcov --all --output-dir target\tarpaulin``
+``cargo build --all --release``
+> Release build also creates PDB files and lets you debug the optimized version as well!
 
 
-## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Chat GOT cargo cheat sheet
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Creating a new project
+To create a new Rust project with Cargo, use the cargo new command:
 
-## Add your files
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+cargo new my_project
+This will create a new directory called my_project with the following directory structure:
 
 ```
-cd existing_repo
-git remote add origin http://gitlab.vnet.kudlek.online/dkudlek/challenge-rust.git
-git branch -M main
-git push -uf origin main
+my_project
+├── Cargo.toml
+└── src
+    └── main.rs
+```
+The Cargo.toml file is the project's manifest file, which contains metadata about the project and its dependencies. The src directory contains the source code for the project, and the main.rs file is the entry point for the project.
+
+Building and running a project
+To build a Rust project with Cargo, use the cargo build command:
+
+```
+cargo build
 ```
 
-## Integrate with your tools
+This will compile the project and create an executable file in the target/debug directory.
 
-- [ ] [Set up project integrations](http://gitlab.vnet.kudlek.online/dkudlek/challenge-rust/-/settings/integrations)
+To run the project, use the cargo run command:
 
-## Collaborate with your team
+```
+cargo run
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+This will build and run the project in one step.
 
-## Test and Deploy
+Adding dependencies
+To add a dependency to a Rust project, add it to the dependencies section of the Cargo.toml file. For example:
 
-Use the built-in continuous integration in GitLab.
+```
+[dependencies]
+reqwest = "0.10"
+```
+This will add the reqwest crate as a dependency. You can then use the crate in your code by adding the following line at the top of your source file:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+```
+extern crate reqwest;
+```
+Publishing a crate
+To publish a Rust crate to crates.io, use the cargo publish command:
 
-***
+```
+cargo publish
+```
+This will build and publish the crate to crates.io. You will need to have an account on crates.io and be logged in with cargo login before you can publish a crate.
 
-# Editing this README
+Testing a project
+To run the tests for a Rust project, use the cargo test command:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```
+cargo test
+```
+This will run all the tests in the project and print the results to the console.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Updating dependencies
+To update the dependencies for a Rust project, use the cargo update command:
 
-## Name
-Choose a self-explaining name for your project.
+```
+cargo update
+```
+This will update all the dependencies for the project to the latest version.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Cleaning a project
+To delete the compiled files for a Rust project, use the cargo clean command:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```
+cargo clean
+```
+This will delete all the compiled files in the target directory, allowing you to start a fresh build.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Chat GPT Rust cheat sheet
+Variables and types
+```
+let x = 5; // x is a variable with the value 5
+let y: i32 = 10; // y is a 32-bit integer with the value 10
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+let s = "Hello, world!"; // s is a string slice
+let s = String::from("Hello, world!"); // s is a owned String
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+let t = true; // t is a boolean value
+let f: bool = false; // f is a boolean value
+```
+# Functions
+```
+fn add(x: i32, y: i32) -> i32 {
+    x + y
+}
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+let result = add(5, 10); // result is 15
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+fn greet(name: &str) {
+    println!("Hello, {}!", name);
+}
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+greet("Alice"); // prints "Hello, Alice!"
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+# Control structures
+```
+let x = 5;
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+if x < 10 {
+    println!("x is small");
+} else {
+    println!("x is not small");
+}
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+let mut i = 0;
 
-## License
-For open source projects, say how it is licensed.
+while i < 10 {
+    println!("{}", i);
+    i += 1;
+}
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+for j in 0..10 {
+    println!("{}", j);
+}
+```
+
+# Arrays and slices
+```
+let a = [1, 2, 3, 4, 5]; // a is an array of 5 integers
+let b = &a[1..3]; // b is a slice of a with elements [2, 3]
+
+let c = [0; 10]; // c is an array of 10 zeros
+
+let d = [1, 2, 3];
+let e = [4, 5, 6];
+let f = [d, e]; // f is a two-dimensional array [[1, 2, 3], [4, 5, 6]]
+```
+# Tuples
+```
+let t = (1, "hello"); // t is a tuple with elements (1, "hello")
+
+let (x, y) = t; // x is 1, y is "hello"
+
+let x = t.0; // x is 1
+let y = t.1; // y is "hello"
+```
+# Structs
+```
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let p = Point { x: 5, y: 10 };
+
+println!("x = {}", p.x); // x = 5
+println!("y = {}", p.y); // y = 10
+```
+# Enums
+```
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+let c = Color::Red;
+
+match c {
+    Color::Red => println!("Red"),
+    Color::Green => println!("Green"),
+    Color::Blue => println!("Blue"),
+}
+
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+let x: Option<i32> = Some(5);
+
+match x {
+    Some(n) => println!("Some({})", n),
+    None => println!("None"),
+```
