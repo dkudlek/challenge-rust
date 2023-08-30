@@ -62,16 +62,16 @@ impl Interval {
         false
     }
 
-    fn has_single_interval(list: &Vec<Interval>, mode: &Mode) -> Option<Interval> {
+    fn has_single_interval<F>(list: &Vec<Interval>, f: F) -> Option<Interval>
+    where
+        F: Fn(&Vec<Interval>) -> Option<Interval>,
+    {
         if list.is_empty() {
             return None;
         } else if list.len() == 1 {
             return Some(list[0].copy());
         }
-        match mode {
-            Mode::Naive => Interval::naive_search(&list),
-            Mode::DynamicProgramming => Interval::dynamic_search(list),
-        }
+        f(list)
     }
 
     /// Naive approach with: O(N * N)
@@ -227,7 +227,7 @@ fn execute_test(list: &Vec<Interval>) {
     println!("[RUN    ] Execute test: naive approach");
     let naive_result;
     let naive_start = Instant::now();
-    naive_result = Interval::has_single_interval(&list, &Mode::Naive);
+    naive_result = Interval::has_single_interval(&list, Interval::naive_search);
     let naive_duration = naive_start.elapsed();
     println!(
         "[SUCCESS] Execute test: naive approach with '{}'",
@@ -237,7 +237,7 @@ fn execute_test(list: &Vec<Interval>) {
     println!("[RUN    ] Execute test: dynamic approach");
     let dynamic_result;
     let dynamic_start = Instant::now();
-    dynamic_result = Interval::has_single_interval(&list, &Mode::DynamicProgramming);
+    dynamic_result = Interval::has_single_interval(&list, Interval::dynamic_search);
     let dynamic_duration = dynamic_start.elapsed();
     println!(
         "[SUCCESS] Execute test: dynamic approach with '{}'",
@@ -377,25 +377,25 @@ mod tests {
 
         // Naive approach
         println!("[RUN    ] Sanity check: naive approach");
-        result = Interval::has_single_interval(&unmatched_first, &Mode::Naive);
+        result = Interval::has_single_interval(&unmatched_first, Interval::naive_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
-        result = Interval::has_single_interval(&unmatched_last, &Mode::Naive);
+        result = Interval::has_single_interval(&unmatched_last, Interval::naive_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
-        result = Interval::has_single_interval(&unmatched_middle, &Mode::Naive);
+        result = Interval::has_single_interval(&unmatched_middle, Interval::naive_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
-        result = Interval::has_single_interval(&matched, &Mode::Naive);
+        result = Interval::has_single_interval(&matched, Interval::naive_search);
         assert!(result.is_none());
         println!("[SUCCESS] Sanity check: naive approach");
 
         // dynamic approach
         println!("[RUN    ] Sanity check: dynamic approach");
-        result = Interval::has_single_interval(&unmatched_first, &Mode::DynamicProgramming);
+        result = Interval::has_single_interval(&unmatched_first, Interval::dynamic_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(0, 3));
-        result = Interval::has_single_interval(&unmatched_last, &Mode::DynamicProgramming);
+        result = Interval::has_single_interval(&unmatched_last, Interval::dynamic_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(25, 50));
-        result = Interval::has_single_interval(&unmatched_middle, &Mode::DynamicProgramming);
+        result = Interval::has_single_interval(&unmatched_middle, Interval::dynamic_search);
         assert!(result.is_some() && result.unwrap() == Interval::new(7, 9));
-        result = Interval::has_single_interval(&matched, &Mode::Naive);
+        result = Interval::has_single_interval(&matched, Interval::naive_search);
         assert!(result.is_none());
         println!("[SUCCESS] Sanity check: dynamic approach");
     }
