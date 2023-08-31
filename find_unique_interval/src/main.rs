@@ -35,11 +35,6 @@ pub(crate) struct Interval {
     high: i32,
 }
 
-pub enum Mode {
-    Naive,              // O(N *N)
-    DynamicProgramming, // O(N log(N) + N)
-}
-
 impl Interval {
     pub fn new(low: i32, high: i32) -> Interval {
         Interval {

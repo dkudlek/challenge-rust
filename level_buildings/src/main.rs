@@ -26,11 +26,6 @@ use std::error::Error;
 use std::time::Duration;
 use std::time::Instant;
 
-pub enum Mode {
-    Naive,              // O(N *N)
-    DynamicProgramming, // O(N log(N) + N)
-}
-
 use std::fmt;
 
 #[derive(Debug)]
@@ -126,7 +121,10 @@ fn has_negative(list_of_building_heights: &Vec<i32>) -> bool {
     return false;
 }
 
-fn run(list_of_building_heights: &Vec<i32>, mode: &Mode) -> Result<i64, GenericError> {
+fn run<F>(list_of_building_heights: &Vec<i32>, f: F) -> Result<i64, GenericError>
+where
+    F: Fn(&Vec<i32>) -> i64,
+{
     if list_of_building_heights.is_empty() {
         return Err(GenericError::new("vector empty!"));
     }
@@ -136,10 +134,7 @@ fn run(list_of_building_heights: &Vec<i32>, mode: &Mode) -> Result<i64, GenericE
     if list_of_building_heights.len() == 1 {
         return Ok(0);
     }
-    match mode {
-        Mode::Naive => Ok(naive_search(&list_of_building_heights)),
-        Mode::DynamicProgramming => Ok(dynamic_search(list_of_building_heights)),
-    }
+    Ok(f(list_of_building_heights))
 }
 
 fn to_time(duration: Duration) -> String {
@@ -159,7 +154,7 @@ fn execute_test(list: &Vec<i32>) {
     println!("[RUN    ] Execute test: naive approach");
     let naive_result;
     let naive_start = Instant::now();
-    naive_result = run(&list, &Mode::Naive);
+    naive_result = run(&list, naive_search);
     let naive_duration = naive_start.elapsed();
     let naive_val = naive_result.unwrap();
     println!(
@@ -170,7 +165,7 @@ fn execute_test(list: &Vec<i32>) {
     println!("[RUN    ] Execute test: dynamic approach");
     let dynamic_result;
     let dynamic_start = Instant::now();
-    dynamic_result = run(&list, &Mode::DynamicProgramming);
+    dynamic_result = run(&list, dynamic_search);
     let dynamic_duration = dynamic_start.elapsed();
     let dynamic_val = dynamic_result.unwrap();
     println!(
@@ -318,8 +313,8 @@ mod tests {
     fn test_linear() {
         let building_heights = vec![1, 2, 3, 4, 5];
         let min_levels = 6;
-        assert!(min_levels == run(&building_heights, &Mode::Naive).unwrap());
-        assert!(min_levels == run(&building_heights, &Mode::DynamicProgramming).unwrap());
+        assert!(min_levels == run(&building_heights, naive_search).unwrap());
+        assert!(min_levels == run(&building_heights, dynamic_search).unwrap());
     }
 
     /// ```
@@ -341,8 +336,8 @@ mod tests {
     fn test_big_diff() {
         let building_heights = vec![1, 1, 1, 6, 10];
         let min_levels = 7;
-        assert!(min_levels == run(&building_heights, &Mode::Naive).unwrap());
-        assert!(min_levels == run(&building_heights, &Mode::DynamicProgramming).unwrap());
+        assert!(min_levels == run(&building_heights, naive_search).unwrap());
+        assert!(min_levels == run(&building_heights, dynamic_search).unwrap());
     }
 
     /// ```
@@ -364,8 +359,8 @@ mod tests {
     fn test_equal_height() {
         let building_heights = vec![10, 10, 10, 10, 10];
         let min_levels = 0;
-        assert!(min_levels == run(&building_heights, &Mode::Naive).unwrap());
-        assert!(min_levels == run(&building_heights, &Mode::DynamicProgramming).unwrap());
+        assert!(min_levels == run(&building_heights, naive_search).unwrap());
+        assert!(min_levels == run(&building_heights, dynamic_search).unwrap());
     }
 
     /// ```
@@ -387,31 +382,31 @@ mod tests {
     fn test_single_peak() {
         let building_heights = vec![0, 0, 0, 0, 10];
         let min_levels = 0;
-        assert!(min_levels == run(&building_heights, &Mode::Naive).unwrap());
-        assert!(min_levels == run(&building_heights, &Mode::DynamicProgramming).unwrap());
+        assert!(min_levels == run(&building_heights, naive_search).unwrap());
+        assert!(min_levels == run(&building_heights, dynamic_search).unwrap());
     }
 
     #[test]
     fn test_negative() {
         // Negative numbers
         let building_heights = vec![1, -1];
-        assert!(run(&building_heights, &Mode::Naive).is_err());
-        assert!(run(&building_heights, &Mode::DynamicProgramming).is_err());
+        assert!(run(&building_heights, naive_search).is_err());
+        assert!(run(&building_heights, dynamic_search).is_err());
     }
 
     #[test]
     fn test_empty() {
         // Empty list
         let building_heights = vec![];
-        assert!(run(&building_heights, &Mode::Naive).is_err());
-        assert!(run(&building_heights, &Mode::DynamicProgramming).is_err());
+        assert!(run(&building_heights, naive_search).is_err());
+        assert!(run(&building_heights, dynamic_search).is_err());
     }
 
     #[test]
     fn test_single_element() {
         // Single Element
         let building_heights = vec![1];
-        assert!(run(&building_heights, &Mode::Naive).unwrap() == 0);
-        assert!(run(&building_heights, &Mode::DynamicProgramming).unwrap() == 0);
+        assert!(run(&building_heights, naive_search).unwrap() == 0);
+        assert!(run(&building_heights, dynamic_search).unwrap() == 0);
     }
 }
