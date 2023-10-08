@@ -2,10 +2,40 @@
 
 build all: 
 
-``cargo tarpaulin --ignore-tests --out Lcov --all --output-dir target\tarpaulin``
+``cargo tarpaulin --ignore-tests --out Lcov --all --output-dir target/tarpaulin``
 ``cargo build --all --release``
 > Release build also creates PDB files and lets you debug the optimized version as well!
 
+# new coverage 
+
+
+```
+rustup component add llvm-tools-preview
+cargo install grcov
+CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test
+grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o lcov.info
+
+```
+grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*"  -o lcov.info
+
+
+Gutter settings: 
+```
+"coverage-gutters.coverageFileNames": [
+    "lcov.info",
+    "cov.xml",
+    "coverage.xml",
+    "jacoco.xml",
+    "coverage.cobertura.xml",
+    "target/coverage/lcov.info",
+    "target/tarpaulin/lcov.info"
+],
+"coverage-gutters.coverageBaseDir": "",
+"coverage-gutters.remotePathResolve": [
+    "../src",
+    "./src",
+],
+```
 
 
 ## Chat GOT cargo cheat sheet

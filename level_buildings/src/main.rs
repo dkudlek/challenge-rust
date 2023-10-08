@@ -58,7 +58,7 @@ impl fmt::Display for GenericError {
 /// Compare each intervale with all other intervals.
 /// Early exit when we find one interval that doesn't overlap with an other interval from the
 /// list.
-fn naive_search(list_of_building_heights: &Vec<i32>) -> i64 {
+fn naive_search(list_of_building_heights: &[i32]) -> i64 {
     let mut min_demolished_levels: i64 = -1;
     for selected_height in list_of_building_heights {
         let mut demolished_levels: i64 = 0;
@@ -75,7 +75,7 @@ fn naive_search(list_of_building_heights: &Vec<i32>) -> i64 {
             min_demolished_levels = demolished_levels
         }
     }
-    return min_demolished_levels;
+    min_demolished_levels
 }
 
 /// Dynamic approach with: ``O(N*log(N)) + O(N) + O(N) ~ O(N*log(N))``
@@ -83,7 +83,7 @@ fn naive_search(list_of_building_heights: &Vec<i32>) -> i64 {
 /// 2. Integrate: ``O(N)``
 /// 3. Find min: ``O(N)``
 ///
-fn dynamic_search(list_of_building_heights: &Vec<i32>) -> i64 {
+fn dynamic_search(list_of_building_heights: &[i32]) -> i64 {
     // Sort
     let mut local_building_heights = list_of_building_heights.to_vec();
     local_building_heights.sort();
@@ -91,7 +91,7 @@ fn dynamic_search(list_of_building_heights: &Vec<i32>) -> i64 {
     let mut integrate_building_heights = vec![];
     let mut accu: i64 = 0;
     for height in &local_building_heights {
-        accu = accu + i64::from(*height);
+        accu += i64::from(*height);
         integrate_building_heights.push(accu);
     }
     let mut min_demolished_levels = -1;
@@ -109,21 +109,21 @@ fn dynamic_search(list_of_building_heights: &Vec<i32>) -> i64 {
             min_demolished_levels = demolished_levels
         }
     }
-    return min_demolished_levels;
+    min_demolished_levels
 }
 
-fn has_negative(list_of_building_heights: &Vec<i32>) -> bool {
+fn has_negative(list_of_building_heights: &[i32]) -> bool {
     for val in list_of_building_heights {
         if *val < 0 {
             return true;
         }
     }
-    return false;
+    false
 }
 
-fn run<F>(list_of_building_heights: &Vec<i32>, f: F) -> Result<i64, GenericError>
+fn run<F>(list_of_building_heights: &[i32], f: F) -> Result<i64, GenericError>
 where
-    F: Fn(&Vec<i32>) -> i64,
+    F: Fn(&[i32]) -> i64,
 {
     if list_of_building_heights.is_empty() {
         return Err(GenericError::new("vector empty!"));
@@ -150,11 +150,11 @@ fn to_time(duration: Duration) -> String {
     )
 }
 
-fn execute_test(list: &Vec<i32>) {
+fn execute_test(list: &[i32]) {
     println!("[RUN    ] Execute test: naive approach");
-    let naive_result;
+
     let naive_start = Instant::now();
-    naive_result = run(&list, naive_search);
+    let naive_result = run(list, naive_search);
     let naive_duration = naive_start.elapsed();
     let naive_val = naive_result.unwrap();
     println!(
@@ -163,9 +163,9 @@ fn execute_test(list: &Vec<i32>) {
     );
 
     println!("[RUN    ] Execute test: dynamic approach");
-    let dynamic_result;
+
     let dynamic_start = Instant::now();
-    dynamic_result = run(&list, dynamic_search);
+    let dynamic_result = run(list, dynamic_search);
     let dynamic_duration = dynamic_start.elapsed();
     let dynamic_val = dynamic_result.unwrap();
     println!(
